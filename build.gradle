@@ -1,0 +1,95 @@
+plugins {
+    id "com.jfrog.bintray" version "1.4"
+    id 'net.saliman.cobertura' version '2.2.7'
+    id 'com.github.kt3k.coveralls' version '2.4.0'
+}
+
+repositories {
+    jcenter()
+}
+
+ext {
+    eventsourcingVersion = '0.1'
+}
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'jacoco'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+// Error on travis: "No source file found on the project: statemachine" see:
+// https://github.com/kt3k/coveralls-gradle-plugin/issues/32
+// https://github.com/ben-manes/caffeine/blob/master/build.gradle
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
+
+check.dependsOn jacocoTestReport
+
+cobertura {
+//    coverageSourceDirs = ['src/main/java']
+    coverageFormats = ['html', 'xml'] // coveralls plugin depends on xml format report
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.4.5'
+//        compile 'org.slf4j:slf4j-api:1.7.13'
+    compile 'org.slf4j:slf4j-simple:1.7.13'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile 'org.assertj:assertj-core:3.2.0'
+    testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+// See: https://github.com/bintray/bintray-examples/blob/master/gradle-bintray-plugin-examples/configurations-example/build.gradle
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            groupId 'org.nextstate'
+            artifactId 'eventsourcing'
+            version eventsourcingVersion
+
+            artifact sourcesJar
+        }
+    }
+}
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+    key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+//    configurations = ['archives']
+    publications = ['MyPublication']
+    pkg {
+        repo = 'maven'
+        name = 'eventsourcing'
+//        userOrg = 'bintray_user'
+        licenses = ['Apache-2.0']
+        publish = true
+        vcsUrl = 'https://github.com/lind/eventsourcing.git'
+        version {
+            name = eventsourcingVersion
+            desc = 'Statemachine lib'
+//            released  = new Date()
+            attributes = ['attr': 'org.nextstate:eventsourcing']
+        }
+    }
+}
+
+task wrapper(type: Wrapper, description: "create a gradlew") {
+    gradleVersion = '2.9'
+}
