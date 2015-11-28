@@ -1,6 +1,5 @@
 # Eventsourcing  
-Aggregate as a stream of events.
-
+Aggregate as a stream of events.  
 About eventsourcing see: [eventsourcing basics](http://docs.geteventstore.com/introduction/event-sourcing-basics/)
 
 Inspired by Greg Young [CQRS documents](https://cqrs.files.wordpress.com/2010/11/cqrs_documents.pdf)
